@@ -1,0 +1,17 @@
+﻿# Android / Java
+*.iml
+.gradle/
+build/
+local.properties
+/.idea/
+/captures/
+.externalNativeBuild/
+# NDK / CMake build output
+app/.cxx/
+app/build/
+# Node / web
+node_modules/
+dist/
+# OS files
+.DS_Store
+Thumbs.db

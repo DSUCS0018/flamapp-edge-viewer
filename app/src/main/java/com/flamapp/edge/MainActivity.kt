@@ -4,20 +4,20 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
-import android.view.TextureView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var textureView: TextureView
+    private lateinit var glView: GLRenderer
     private lateinit var cameraHelper: Camera2Helper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        textureView = TextureView(this)
-        setContentView(textureView)
+
+        glView = GLRenderer(this)
+        setContentView(glView)
 
         val permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) {
@@ -37,16 +37,26 @@ class MainActivity : AppCompatActivity() {
     private fun setupCamera() {
         cameraHelper = Camera2Helper(this, object : Camera2Helper.FrameCallback {
             override fun onFrameAvailable(nv21: ByteArray, width: Int, height: Int) {
-                // For now just log a short message for each frame (avoid flooding logs)
-                Log.d(\"MainActivity\", \"frame received: {nv21.size} bytes, width x height\")
-                // Later: call NativeBridge.processFrame(nv21, width, height)
+                // pass to native processing
+                try {
+                    NativeBridge.processFrame(nv21, width, height)
+                } catch (t: Throwable) {
+                    Log.e(\"MainActivity\", \"native process error\", t)
+                }
             }
         })
-        textureView.surfaceTextureListener = cameraHelper.textureListener
+        // start immediately (Camera2Helper.startCamera opens camera)
+        cameraHelper.startCamera()
     }
 
     override fun onPause() {
         super.onPause()
+        glView.onPause()
         if (::cameraHelper.isInitialized) cameraHelper.stopCamera()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        glView.onResume()
     }
 }
